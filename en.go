@@ -167,23 +167,3 @@ func parseMantissa(s string) (neg bool, size, first, exp int) {
 	return
 }
 
-/*
-	str := fmt.Sprintf("%.3e", f)
-	negSign, _, fstDigit, eIdx := parseMantissa(str)
-	// round the float if needed
-//	if str[eIdx-2] != 0 { // ck the last digit of the mantissa
-tstDig := str[eIdx-2] - 48  // adjust test digit to 0-9
-fmt.Println("*** str[",eIdx-2, "]=", str[eIdx-2],
-", tstDig=", tstDig, ", neg=", negSign)
-if tstDig >= 5 && tstDig <= 9 { // ck the last digit of the mantissa
-		exp, _ := strconv.Atoi(str[eIdx:])
-//		rndVal := 0.005
-rndVal := 0.01
-		if negSign {
-			rndVal = -rndVal
-		}
-		ff := (rndVal * math.Pow(10.0, float64(exp))) + f
-		str = fmt.Sprintf("%.3e", ff)
-		negSign, _, fstDigit, eIdx = parseMantissa(str)
-	}
-*/

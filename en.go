@@ -54,11 +54,11 @@ var enExpCode = []string{
 // to a pure float64.
 //   en.EnToFloat(632.5, en.Nano) returns 6.325e-07
 func EnToFloat(mantissa float64, expEnIdx int) (floatVal float64,
-err error) {
+	err error) {
 	// is exponent within range?
 	if expEnIdx < 0 || expEnIdx >= len(enExpCode) {
-    err = errors.New("en: Invalid exponent code or out-of-range.")
-    return
+		err = errors.New("en: Invalid exponent code or out-of-range.")
+		return
 	}
 	// convert the mantissa to a string so we can pick it apart
 	str := fmt.Sprintf("%.3e", mantissa) // -n.nnne-nn
@@ -75,7 +75,7 @@ err error) {
 // rounded to 3 significant digits.
 //   en.FloatToEn(6.325e-07) returns "633 n"
 func FloatToEn(f float64) (result string) {
-  str, fstDigit, eIdx := roundMantissa(f)  // round if needed
+	str, fstDigit, eIdx := roundMantissa(f) // round if needed
 	// pick off the digits
 	var d = []string{ // skip over the period
 		str[0 : fstDigit+1],
@@ -106,7 +106,7 @@ func FloatToEn(f float64) (result string) {
 // components, e.g., mantissa, exponent, index, and code.
 //    en.Parse(6.325e-07) returns "633.00", -9, 5, "n"
 func Parse(f float64) (m string, e int, i int, c string) {
-  str, fstDigit, eIdx := roundMantissa(f) // round if needed
+	str, fstDigit, eIdx := roundMantissa(f) // round if needed
 	// pick off the digits
 	var d = []string{ // skip over the period
 		str[0 : fstDigit+1],
@@ -130,24 +130,27 @@ func Parse(f float64) (m string, e int, i int, c string) {
 	if enIdx >= 0 && enIdx < len(enExpCode) {
 		c = enExpCode[i]
 	} else {
-		c = fmt.Sprintf("%se%s", enMan, strconv.Itoa(e))  // Out of Range
+		c = fmt.Sprintf("%se%s", enMan, strconv.Itoa(e)) // Out of Range
 	}
 	return
 }
 
 func roundMantissa(f float64) (str string, fstDigit, eIdx int) {
 	str = fmt.Sprintf("%.3e", f)
-  var negSign bool
+	var negSign bool
 	negSign, _, fstDigit, eIdx = parseMantissa(str)
-	tstDig := str[eIdx-2] - 48  // adjust test digit to 0-9
+	tstDig := str[eIdx-2] - 48      // adjust test digit to 0-9
 	if tstDig >= 5 && tstDig <= 9 { // ck the last digit of the mantissa
 		exp, _ := strconv.Atoi(str[eIdx:])
-		rndVal := 0.01 ; if negSign {	rndVal = -rndVal }
+		rndVal := 0.01
+		if negSign {
+			rndVal = -rndVal
+		}
 		ff := (rndVal * math.Pow(10.0, float64(exp))) + f
 		str = fmt.Sprintf("%.3e", ff)
 		negSign, _, fstDigit, eIdx = parseMantissa(str)
 	}
-  return
+	return
 }
 
 func parseMantissa(s string) (neg bool, size, first, exp int) {
@@ -184,4 +187,3 @@ rndVal := 0.01
 		negSign, _, fstDigit, eIdx = parseMantissa(str)
 	}
 */
-

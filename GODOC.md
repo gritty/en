@@ -36,18 +36,18 @@ const (
 **FUNCTIONS**
 
  ```
-func **_EnToFloat_**(mantissa float64, expEnIdx int) (floatVal float64)
+func EnToFloat(mantissa float64, expEnIdx int) (floatVal float64)
     EnToFloat converts a float64 + its "en" code to a pure float64.
 
 	en.EnToFloat(632.5, en.Nano) returns 6.325e-07
 
-func **_FloatToEn_**(f float64) (result string)
+func FloatToEn(f float64) (result string)
     FloatToEn converts a float64 to its "en" equivilent rounded to 3
     significant digits.
 
 	en.FloatToEn(6.325e-07) returns "633 n"
 
-func **_Parse_**(f float64) (m string, e int, i int, c string)
+func Parse(f float64) (m string, e int, i int, c string)
     Parse breaks out a float64 number into its engineering notation
     components, e.g., mantissa, exponent, index, and code.
 

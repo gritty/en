@@ -1,14 +1,16 @@
-PACKAGE DOCUMENTATION
+**PACKAGE DOCUMENTATION**
 
+ ```
 package en
     import "github.com/gritty/en"
 
     Package "en" implements function calls to convert floating point numbers
     to and from Engineering Notation.
+ ```
 
+**CONSTANTS**
 
-CONSTANTS
-
+ ```
 const (
     Yotta = 24  // Y 1,000,000,000,000,000,000,000,000
     Zetta = 21  // Z 1,000,000,000,000,000,000,000
@@ -29,7 +31,9 @@ const (
     Yocto = -24 // y 0.000,000,000,000,000,000,000,001
 )
     Engineering Notation index
+ ```
 
+ ```
 const (
     Amp   = "A"
     Volt  = "V"
@@ -40,10 +44,11 @@ const (
     Watt  = "W"
 )
     Electronic Unit Abbreviations
+ ```
 
+**FUNCTIONS**
 
-FUNCTIONS
-
+ ```
 func EntoF(mantissa float64, expEn int) (f float64)
     en.EntoF(number, category) takes a floating point number and adjusts it
     to an engineering notation category. So if the number (It can be any
@@ -71,5 +76,5 @@ func FtoME(f float64) (m float64, e int)
 func GetEnCode(exp int) (c string)
     GetEnCode(exponent) returns the Engineering Notation for the specified
     exponent, e.g., en.GetEnCode(en.Micro) returns "µ"
-
+ ```
 

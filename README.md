@@ -9,13 +9,15 @@ Licensed under GNU General Public License 3.0.
 
 See LICENSE.md file for details.
 
-**_en contains three functions._**
+**_en contains four public functions._**
 
-1. **_EnToFloat()_** encodes a float64 value with an associated engineering notation constant to a standard float64 value.
+1. **_EntoF()_** takes a floating point number and an engineering notation range and returns a standard float64 value.
 
-2. **_FloatToEn()_** creates an engineering notation string from a standard float64 value.
+2. **_FtoEn()_** takes a standard float64 value and returns an engineering notated string.
 
-3. **_Parse()_** breaks out a float64 number into its engineering notation components.
+3. **_FtoME()_** splits a float64 number into its engineering notation mantissa and exponent.
+
+4. **_GetEnCode()_** returns the engineering notation code/prefix for the specified exponent.
 
 #**Example:**
 
@@ -23,133 +25,138 @@ See LICENSE.md file for details.
 package main
 
 import (
-  "github.com/gritty/en"
-  "fmt"
+	"fmt"
+	"github.com/gritty/en"
 )
 
 func main() {
-  fmt.Printf("Testing Engineering Notation.\n\n")
+	var f float64
+	var s string
+	var m float64
+	var e int
 
-  // EnToFloat converts an engineering notation number to float64.
-  f64, err := en.EnToFloat(632.5, en.Nano) // returns 6.325e-07
-  if err != nil {
-    // Returns err string if out-of-range or invalid exponet detected.
-    fmt.Println(err)
-  }
-  fmt.Println("en.EnToFloat(632.5, en.Nano)               returns:",
-    f64)
+	fmt.Printf("Public \"en\" functions:\n")
 
-  // FloatToEn converts a float64 number to its engineering notation.
-  sEn := en.FloatToEn(6.325e-07)      // returns "633 n"
-  fmt.Println("en.FloatToEn(6.325e-07)                    returns:",
-    sEn)
+	// EntoF() converts an engineering notation number to float64.
+	f = en.EntoF(-632.5, en.Nano) // returns 6.325e-07
+	fmt.Println("en.EntoF(632.5, en.Nano)    returns:", f)
+	// FtoEn() converts a float64 number to its engineering notation.
+	s = en.FtoEn(-6.325e-07) // returns "633 n"
+	fmt.Println("en.FtoEn(6.325e-07)         returns:", s)
+	// FtoME() breaks out a float64 number into its engineering notation
+	// mantissa and exponent parts.
+	m, e = en.FtoME(-6.325e-07) // returns "633.00", -12
+	// m = mantissa, e = exponent
+	fmt.Println("en.FtoME(6.325e-07)         returns:", m, e)
+	// GetEnCode() returns the engineering notation for a specified
+	// exponent.
+	s = en.GetEnCode(en.Micro) // returns "µ"
+	fmt.Println("en.GetEnCode(en.Micro)      returns:", s)
 
-  // Parse breaks out a float64 number into its engineering notation.
-  m, e, x, c := en.Parse(6.325e-07)   // returns "633.00", -12, 3, "n"
-  // m = mantissa, e = exponent, x = index, and  c = code
-  fmt.Println("en.Parse(6.325e-07)                        returns:",
-    m, e, x, c)
+	fmt.Printf("\nOut of range results:\n")
 
-  fmt.Println()
+	// FtoEn() returns a float64 number if it receives a number that is
+	// not within an engineering notation range.
+	s = en.FtoEn(0.1e-24) // returns
+	fmt.Println("en.FtoEn(0.1e-24)           returns:", s)
+	s = en.FtoEn(1000e+24) // returns 1.00e+27
+	fmt.Println("en.FtoEn(1000e+24)          returns:", s)
 
-  // Format returned of out-of-range Engineering Notation value.
-  fmt.Println("OUT-OF-RANGE value en.FloatToEn(6.325e-32) returns:",
-    en.FloatToEn(6.325e-32))  // returns 63.3e-33
+	fmt.Printf("\nFour ways to convert 4.83k to a float64:\n")
 
-  fmt.Println()
+	f = en.EntoF(4.83, en.Kilo)
+	fmt.Printf("en.EntoF(4.83, en.Kilo)     returns: %.3e\n", f)
+	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
+	f = en.EntoF(0.00483, en.Mega)
+	fmt.Printf("en.EntoF(0.00483, en.Mega)  returns: %.3e\n", f)
+	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
+	f = en.EntoF(4830.0, en.Unit)
+	fmt.Printf("en.EntoF(4830.0, en.Unit)   returns: %.3e\n", f)
+	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
+	f = en.EntoF(4830000, en.Milli)
+	fmt.Printf("en.EntoF(4830000, en.Milli) returns: %.3e\n", f)
+	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
 
-  // Four ways to convert "4.83 k" to float64.
-  f1, _ := en.EnToFloat(4.83, en.Kilo)
-  fmt.Printf("en.EnToFloat(4.83, en.Kilo)     returns: %.3e\n", f1)
-  fmt.Println("en.FloatToEn(f1) returns:", en.FloatToEn(f1))
-  f2, _ := en.EnToFloat(0.00483, en.Mega)
-  fmt.Printf("en.EnToFloat(0.00483, en.Mega)  returns: %.3e\n", f2)
-  fmt.Println("en.FloatToEn(f2) returns:", en.FloatToEn(f2))
-  f3, _ := en.EnToFloat(4830.0, en.Unit)
-  fmt.Printf("en.EnToFloat(4830.0, en.Unit)   returns: %.3e\n", f3)
-  fmt.Println("en.FloatToEn(f3) returns:", en.FloatToEn(f3))
-  f4, _ := en.EnToFloat(4830000, en.Milli)
-  fmt.Printf("en.EnToFloat(4830000, en.Milli) returns: %.3e\n", f4)
-  fmt.Println("en.FloatToEn(f4) returns:", en.FloatToEn(f4))
+	fmt.Printf("\n%s\n",
+		"Calculated Thevenin voltage and resistance for a circuit:")
 
-  // Calculate the Thevenin voltage and resistance for a circuit.
-  fmt.Printf("\n%s\n",
-    "Calculating Thevenin voltage and resistance for a circuit.")
-  //   +---6kohm--+--4kOhm-A-+
-  //   |          |          |
-  //  72v       3kohm      Rlohm
-  //   |          |          |
-  //   +----------+--------B-+
+	//   +---6kΩ----+---4kΩ--A-+
+	//   |          |          |
+	//  72V        3kΩ      RloadΩ
+	//   |          |          |
+	//   +----------+--------B-+
 
-  v1       := float64(72) // volts dc
-  r1, _  := en.EnToFloat(6, en.Kilo)  // ohms
-  r2, _  := en.EnToFloat(3, en.Kilo)  // ohms
-  r3, _  := en.EnToFloat(4, en.Kilo)  // ohms
+	v1 := float64(72)          // 72V dc
+	r1 := en.EntoF(6, en.Kilo) // 6kΩ
+	r2 := en.EntoF(3, en.Kilo) // 3kΩ
+	r3 := en.EntoF(4, en.Kilo) // 4kΩ
 
-  // calculate Vth
-  i := v1 / (r1 + r2)
-  fmt.Println("i   =", en.FloatToEn(i), "amps")
-  Vth := i * r2
-  fmt.Println("Vth =", en.FloatToEn(Vth), "volts")
+	// calculate Vth
+	i := v1 / (r1 + r2)
+	fmt.Println("I   =", en.FtoEn(i)+en.Amp)
+	Vth := i * r2
+	fmt.Println("Vth =", en.FtoEn(Vth)+en.Volt)
 
-  // calculate Rth using product over sum
-  Rth := r3 + (r2 * r1) / (r2 + r1)
+	// calculate Rth using product over sum
+	Rth := r3 + (r2*r1)/(r2+r1)
 
-  // Thevemom circuit:
-  //   +---6kohm---A-+
-  //   |             |
-  //  24v          Rlohm
-  //   |             |
-  //   +-----------B-+
+	// Thevenin circuit:
+	//   +----6kΩ---A-+
+	//   |            |
+	//  24V         RloadΩ
+	//   |            |
+	//   +----------B-+
 
-  fmt.Println("Rth =", en.FloatToEn(Rth), "ohms")
+	fmt.Println("Rth =", en.FtoEn(Rth)+en.Ohm)
 }
  ```
 
 #**Output:**
 
  ```
-Testing Engineering Notation.
+Public "en" functions:
+en.EntoF(632.5, en.Nano)    returns: -6.325e-07
+en.FtoEn(6.325e-07)         returns: -633n
+en.FtoME(6.325e-07)         returns: -6.325 -7
+en.GetEnCode(en.Micro)      returns: µ
 
-en.EnToFloat(632.5, en.Nano)               returns: 6.325e-07
-en.FloatToEn(6.325e-07)                    returns: 633 n
-en.Parse(6.325e-07)                        returns: 633.00 -9 5 n
+Out of range results:
+en.FtoEn(0.1e-24)           returns: 100e-27
+en.FtoEn(1000e+24)          returns: 1.00e27
 
-OUT-OF-RANGE value en.FloatToEn(6.325e-32) returns: 63.3e-33
+Four ways to convert 4.83k to a float64:
+en.EntoF(4.83, en.Kilo)     returns: 4.830e+03
+en.FtoEn(4.830e+03)         returns: 4.83k
+en.EntoF(0.00483, en.Mega)  returns: 4.830e+03
+en.FtoEn(4.830e+03)         returns: 4.83k
+en.EntoF(4830.0, en.Unit)   returns: 4.830e+03
+en.FtoEn(4.830e+03)         returns: 4.83k
+en.EntoF(4830000, en.Milli) returns: 4.830e+03
+en.FtoEn(4.830e+03)         returns: 4.83k
 
-en.EnToFloat(4.83, en.Kilo)     returns: 4.830e+03
-en.FloatToEn(f1) returns: 4.83 k
-en.EnToFloat(0.00483, en.Mega)  returns: 4.830e+03
-en.FloatToEn(f2) returns: 4.83 k
-en.EnToFloat(4830.0, en.Unit)   returns: 4.830e+03
-en.FloatToEn(f3) returns: 4.83 k
-en.EnToFloat(4830000, en.Milli) returns: 4.830e+03
-en.FloatToEn(f4) returns: 4.83 k
-
-Calculating Thevenin voltage and resistance for a circuit.
-i   = 8.00 m amps
-Vth = 24.0   volts
-Rth = 6.00 k ohms
+Calculated Thevenin voltage and resistance for a circuit:
+I   = 8.00mA
+Vth = 24.0V
+Rth = 6.00kΩ
  ```
 
 #**Documentation:**
 
-You display the en documentation in Linux by entering the following 
-within a terminal window or by just looking at the source code:
+You display the _en_ documentation by entering the following within a terminal window or by just looking at the source code:
 
  ```
-$ godoc "github.com/gritty/en"
+godoc "github.com/gritty/en"
  ```
 
 #**Access:**
 
  ```
-$ go get "github.com/gritty/en"
+go get "github.com/gritty/en"
  ```
 
 #**Limitations:**
 
-en notation is valid only between Yocto (1.0e-24) and Yotta(1.0e24), e.g., 1/1,000,000,000,000,000,000,000 to 1,000,000,000,000,000,000,000,000
+_en_ can only return engineering notation for values between Yocto (1.0e-24) and Yotta(1.0e24), e.g., 0.000,000,000,000,000,000,000,001 to 1,000,000,000,000,000,000,000,000
 
-en.FloatToEn() rounds its value to three significant digits.
+en.FtoEn() rounds the return value to three digits.
 

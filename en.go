@@ -22,148 +22,196 @@ package en
 import "fmt"
 import "strconv"
 import "math"
-import "errors"
+
+// Engineering Notation uses powers of ten that are multiples of 3
+// e.g., 10x-06, 10x-03, 10x+00, 10x+03, 10x+06, ...
+//
+// In the floating point contimuium of numbers the middle range of
+// number from 10x-24 to 10x+24 have been categorized into
+// 17 divisions/prefixes.  Each category of 3 (zeoto: 10x-21, 10x-20,
+// 10x-19) and named (milli, kilo, etc.) and assigned each a character
+// to represent each in turn (M for mega, G for giga, etc.).
+// For example: The kilo category has the prefix "k" for the range
+// 10x+03 to 10x+05.
+//
+// This categoration is called Engineering Notation.
+//
+// This package, en, facilitates the entry and display of numbers with
+// this categorization into and out of your floating point
+// calculations.
+//
+// For an explanation of Engineering Notation see:
+//   http://en.wikipedia.org/wiki/Engineering_notation
+// For more information on equations, see:
+//   http://www.bowest.com.au/library.html
 
 // Engineering Notation index
 const (
-	Yotta = 16 // Y  24 1,000,000,000,000,000,000,000,000
-	Zetta = 15 // Z  21 1,000,000,000,000,000,000,000
-	Exa   = 14 // E  18 1,000,000,000,000,000,000
-	Peta  = 13 // P  15 1,000,000,000,000,000
-	Tera  = 12 // T  12 1,000,000,000,000
-	Giga  = 11 // G   9 1,000,000,000
-	Mega  = 10 // M   6 1,000,000
-	Kilo  = 9  // k   3 1,000
-	Unit  = 8  //     0 1
-	Milli = 7  // m - 3 0.001
-	Micro = 6  // u - 6 0.000,001
-	Nano  = 5  // n - 9 0.000,000,001
-	Pico  = 4  // p -12 0.000,000,000,001
-	Femto = 3  // f -15 0.000,000,000,000,001
-	Atto  = 2  // a -18 0.000,000,000,000,000,001
-	Zepto = 1  // z -21 0.000,000,000,000,000,000,001
-	Yocto = 0  // y -24 0.000,000,000,000,000,000,000,001
+	Yotta = 24  // Y 1,000,000,000,000,000,000,000,000
+	Zetta = 21  // Z 1,000,000,000,000,000,000,000
+	Exa   = 18  // E 1,000,000,000,000,000,000
+	Peta  = 15  // P 1,000,000,000,000,000
+	Tera  = 12  // T 1,000,000,000,000
+	Giga  = 9   // G 1,000,000,000
+	Mega  = 6   // M 1,000,000
+	Kilo  = 3   // k 1,000
+	Unit  = 0   //   1
+	Milli = -3  // m 0.001
+	Micro = -6  // u 0.000,001
+	Nano  = -9  // n 0.000,000,001
+	Pico  = -12 // p 0.000,000,000,001
+	Femto = -15 // f 0.000,000,000,000,001
+	Atto  = -18 // a 0.000,000,000,000,000,001
+	Zepto = -21 // z 0.000,000,000,000,000,000,001
+	Yocto = -24 // y 0.000,000,000,000,000,000,000,001
 )
 
-var enExpCode = []string{
-	"y", "z", "a", "f", "p", "n", "u", "m",
-	" ",
-	"k", "M", "G", "T", "P", "E", "Z", "Y"}
+// Electronic Unit Abbreviations
+const (
+	Amp   = "A"
+	Volt  = "V"
+	Ohm   = "Ω"
+	Hertz = "Hz"
+	Farad = "F"
+	Henry = "H"
+	Watt  = "W"
+)
 
-// EnToFloat converts a float64 + its "en" code
-// to a pure float64.
-//   en.EnToFloat(632.5, en.Nano) returns 6.325e-07
-func EnToFloat(mantissa float64, expEnIdx int) (floatVal float64,
-	err error) {
-	// is exponent within range?
-	if expEnIdx < 0 || expEnIdx >= len(enExpCode) {
-		err = errors.New("en: Invalid exponent code or out-of-range.")
-		return
-	}
-	// convert the mantissa to a string so we can pick it apart
-	str := fmt.Sprintf("%.3e", mantissa) // -n.nnne-nn
-	_, mSize, _, eIdx := parseMantissa(str)
-	man, _ := strconv.ParseFloat(str[:mSize], 64)
-	expVal, _ := strconv.Atoi(str[eIdx:])
-	// adjust exponent to a new en value
-	adjExpVal := (expEnIdx-8)*3 + expVal
-	floatVal = man * math.Pow(10.0, float64(adjExpVal))
+// Returns a float's mantissa and exponent.
+// en.FtoME(-234.5e-03)
+// returns the floating point split into its
+// mantissa and exponent, e.g., -2.345 and -1
+func FtoME(f float64) (m float64, e int) {
+	s, fstDigit := floatToDigits(f) // -m.mmme-ee
+	// Break out the mantissa (m.mmm).
+	m, _ = strconv.ParseFloat(s[:fstDigit+5], 64)
+	// Break out the exponent (ee)
+	e, _ = strconv.Atoi(s[fstDigit+6:])
 	return
 }
 
-// FloatToEn converts a float64 to its "en" equivilent
-// rounded to 3 significant digits.
-//   en.FloatToEn(6.325e-07) returns "633 n"
-func FloatToEn(f float64) (result string) {
-	str, fstDigit, eIdx := roundMantissa(f) // round if needed
-	// pick off the digits
-	var d = []string{ // skip over the period
-		str[0 : fstDigit+1],
-		str[fstDigit+2 : fstDigit+3],
-		str[fstDigit+3 : fstDigit+4],
+// en.EntoF(number, category) takes a floating point number and
+// adjusts it to an engineering notation category.  So if the number
+// (It can be any valid floating point number.) is say 1.23456 and the
+// category is kilo (1.23456 kilos) than the number will be stored as
+// 1.23456e03 which is 1.23456 kilos or 123.456 units of the item.
+// The returned adjusted number can then be used as any other floating
+// point number.  en.EntoF(1234.56, en.Kilo) returns 123.3456e+06
+func EntoF(mantissa float64, expEn int) (f float64) {
+	// Identify parts location and size, e.g., -m.mmmx-ee.
+	str, fstDigit := floatToDigits(mantissa)
+
+	// Break out the mantissa (m.mmm).
+	man, _ := strconv.ParseFloat(str[:fstDigit+5], 64)
+
+	// Break out the exponent (ee)
+	exp, _ := strconv.Atoi(str[fstDigit+6:])
+	adjExp := exp + expEn
+
+	// Build internal float from the mantissa and the supplied
+	// Engineering Notation entry.
+	f = man * math.Pow(10.0, float64(adjExp))
+	return
+}
+
+// FtoEn(number, category) returns a string of the number in the
+// format of an engineering notation category.  For the number
+// 2.3456e03, is specified with a category Kilo then FtoEn() will
+// returned as "235k" or 123 kilos.  Note, that FtoEn() rounds the
+// number to three digits.
+//
+// FtoEn(number) returns a string of number in the appropriate
+// engineering notation category, i.e., If the number 2.3456e07 is
+// specified then the string "23.5 M" (23.5 mega) will be returned.
+func FtoEn(f float64) (enNotated string) {
+	enNotated = floatToEn(f)
+	return
+}
+
+// GetEnCode(exponent) returns the Engineering Notation for the
+// specified exponent, e.g., en.GetEnCode(en.Micro) returns "µ"
+func GetEnCode(exp int) (c string) {
+	if float64(exp) >= Yocto && float64(exp) <= Yotta {
+		// look up the en code using our en index
+		enExpCode := []string{
+			"y", "z", "a", "f", "p", "n", "µ", "m",
+			"",
+			"k", "M", "G", "T", "P", "E", "Z", "Y"}
+		// shift e to enExpCode index range
+		cIdx := (exp / 3) + (len(enExpCode) / 2)
+		c = enExpCode[cIdx]
+	} else {
+		c = "" // out-of-range for engineering notation
 	}
-	// get the exponent
-	exp, _ := strconv.Atoi(str[eIdx:])
-	// determine where the period should go and get the en code
-	var pFmt = []string{
+	return
+}
+
+func floatToDigits(f float64) (str string, fstDigit int) {
+	// Convert the float to a string so it can be picked apart.
+	str = fmt.Sprintf("%.3e", f) // -n.nnne-nn
+	if str[:1] == "-" {
+		fstDigit = 1
+	} else {
+		fstDigit = 0
+	}
+	return
+}
+
+func getDigits(f float64) (d [4]string, e float64) {
+	minus := false
+	// pick off the digits
+	more := 2 // set for 2 passes just in case we need to round.
+	for more > 0 {
+		// Get the start points.
+		str, fstDigit := floatToDigits(f) // -m.mmmx-ee
+
+		// pull the exponent
+		e, _ = strconv.ParseFloat(str[fstDigit+6:], 64)
+
+		// Determine if the mantissa is minus or not.
+		if str[0:1] == "-" {
+			minus = true
+		}
+		// pull the digits  d.dddx-ee
+		d[0] = str[0 : fstDigit+1]
+		for i := 1; i <= 3; i++ { // skip over the period
+			d[i] = str[fstDigit+i+1 : fstDigit+i+2]
+		}
+		// Round if needed.
+		if d[3] >= "5" && d[3] <= "9" {
+			// we need to round
+			roundVal := 0.01
+			if minus {
+				roundVal = -roundVal
+			}
+			f = (roundVal * math.Pow(10.0, e)) + f
+			more -= 1
+		} else {
+			more = 0 // round not needed
+		}
+	}
+	return
+}
+
+func floatToEn(f float64) (s string) {
+	var c string
+	d, fExp := getDigits(f)
+	exp := int(fExp)
+	// Determine where the period should go.
+	pFmt := []string{
+		// mx-02     mx-01     mx+00      mx+01     mx+02
 		"%s%s.%s", "%s%s%s", "%s.%s%s", "%s%s.%s", "%s%s%s"}
 	pIdx := (exp % 3) + 2 // shift value -2,-1,0,1,2 => 0,1,2,3,4
-	enExp := []int{exp - 1, exp - 2, exp, exp - 1, exp - 2}[pIdx]
+	e := []int{exp - 1, exp - 2, exp, exp - 1, exp - 2}[pIdx]
 	// return number in engineering notation
-	enMan := fmt.Sprintf(pFmt[pIdx], d[0], d[1], d[2])
-	// look up the en code using our en index
-	enIdx := (enExp / 3) + 8 // shift enExp to 0-len(enExpCode) range
-	if enIdx >= 0 && enIdx < len(enExpCode) {
-		result = enMan + " " + enExpCode[enIdx]
-	} else {
-		// Out of Range
-		result = fmt.Sprintf("%se%s", enMan, strconv.Itoa(enExp))
+	m := fmt.Sprintf(pFmt[pIdx], d[0], d[1], d[2])
+	c = GetEnCode(e)
+	// GetEnCode returns a "" string for both the out-of-range
+	// condition and en.Unit.
+	if c != "" || e == Unit {
+		s = fmt.Sprintf("%s%s", m, c) // MMMC, e.g., "123k"
+	} else { // number is out of the engineering notation range
+		s = fmt.Sprintf("%se%d", m, e) // MMMeEE, e.g., "1.23e30"
 	}
 	return
 }
-
-// Parse breaks out a float64 number into its engineering notation
-// components, e.g., mantissa, exponent, index, and code.
-//    en.Parse(6.325e-07) returns "633.00", -9, 5, "n"
-func Parse(f float64) (m string, e int, i int, c string) {
-	str, fstDigit, eIdx := roundMantissa(f) // round if needed
-	// pick off the digits
-	var d = []string{ // skip over the period
-		str[0 : fstDigit+1],
-		str[fstDigit+2 : fstDigit+3],
-		str[fstDigit+3 : fstDigit+4],
-	}
-	// get the exponent
-	exp, _ := strconv.Atoi(str[eIdx:])
-	// determine where the period should go and get the en code
-	var pFmt = []string{
-		" %s%s.%s0", "%s%s%s.00", "  %s.%s%s", " %s%s.%s0", "%s%s%s.00"}
-	pIdx := (exp % 3) + 2 // shift value -2,-1,0,1,2 => 0,1,2,3,4
-	enExp := []int{exp - 1, exp - 2, exp, exp - 1, exp - 2}[pIdx]
-	// return number in engineering notation
-	enMan := fmt.Sprintf(pFmt[pIdx], d[0], d[1], d[2])
-	// look up the en code using our en index
-	enIdx := (enExp / 3) + 8 // shift enExp to 0-len(enExpCode) range
-	m = enMan
-	e = enExp
-	i = enIdx
-	if enIdx >= 0 && enIdx < len(enExpCode) {
-		c = enExpCode[i]
-	} else {
-		c = fmt.Sprintf("%se%s", enMan, strconv.Itoa(e)) // Out of Range
-	}
-	return
-}
-
-func roundMantissa(f float64) (str string, fstDigit, eIdx int) {
-	str = fmt.Sprintf("%.3e", f)
-	var negSign bool
-	negSign, _, fstDigit, eIdx = parseMantissa(str)
-	tstDig := str[eIdx-2] - 48      // adjust test digit to 0-9
-	if tstDig >= 5 && tstDig <= 9 { // ck the last digit of the mantissa
-		exp, _ := strconv.Atoi(str[eIdx:])
-		rndVal := 0.01
-		if negSign {
-			rndVal = -rndVal
-		}
-		ff := (rndVal * math.Pow(10.0, float64(exp))) + f
-		str = fmt.Sprintf("%.3e", ff)
-		negSign, _, fstDigit, eIdx = parseMantissa(str)
-	}
-	return
-}
-
-func parseMantissa(s string) (neg bool, size, first, exp int) {
-	neg = false
-	size = 5
-	first = 0
-	exp = 6
-	if s[:1] == "-" {
-		neg = true
-		size += 1  // include the minus sign
-		first += 1 // first actual digit
-		exp += 1   // move the exponent start position past the "e"
-	}
-	return
-}
-

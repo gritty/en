@@ -1,56 +1,75 @@
-**PACKAGE DOCUMENTATION**
+PACKAGE DOCUMENTATION
 
- ```
 package en
-    import "."
+    import "github.com/gritty/en"
 
-    Package "en" implements function calls to convert floating point 
-    numbers to and from Engineering Notation.
- ```
+    Package "en" implements function calls to convert floating point numbers
+    to and from Engineering Notation.
 
-**CONSTANTS**
 
- ```
+CONSTANTS
+
 const (
-    Yotta = 16 // Y  24 1,000,000,000,000,000,000,000,000
-    Zetta = 15 // Z  21 1,000,000,000,000,000,000,000
-    Exa   = 14 // E  18 1,000,000,000,000,000,000
-    Peta  = 13 // P  15 1,000,000,000,000,000
-    Tera  = 12 // T  12 1,000,000,000,000
-    Giga  = 11 // G   9 1,000,000,000
-    Mega  = 10 // M   6 1,000,000
-    Kilo  = 9  // k   3 1,000
-    Unit  = 8  //     0 1
-    Milli = 7  // m - 3 0.001
-    Micro = 6  // u - 6 0.000,001
-    Nano  = 5  // n - 9 0.000,000,001
-    Pico  = 4  // p -12 0.000,000,000,001
-    Femto = 3  // f -15 0.000,000,000,000,001
-    Atto  = 2  // a -18 0.000,000,000,000,000,001
-    Zepto = 1  // z -21 0.000,000,000,000,000,000,001
-    Yocto = 0  // y -24 0.000,000,000,000,000,000,000,001
+    Yotta = 24  // Y 1,000,000,000,000,000,000,000,000
+    Zetta = 21  // Z 1,000,000,000,000,000,000,000
+    Exa   = 18  // E 1,000,000,000,000,000,000
+    Peta  = 15  // P 1,000,000,000,000,000
+    Tera  = 12  // T 1,000,000,000,000
+    Giga  = 9   // G 1,000,000,000
+    Mega  = 6   // M 1,000,000
+    Kilo  = 3   // k 1,000
+    Unit  = 0   //   1
+    Milli = -3  // m 0.001
+    Micro = -6  // u 0.000,001
+    Nano  = -9  // n 0.000,000,001
+    Pico  = -12 // p 0.000,000,000,001
+    Femto = -15 // f 0.000,000,000,000,001
+    Atto  = -18 // a 0.000,000,000,000,000,001
+    Zepto = -21 // z 0.000,000,000,000,000,000,001
+    Yocto = -24 // y 0.000,000,000,000,000,000,000,001
 )
     Engineering Notation index
- ```
 
-**FUNCTIONS**
+const (
+    Amp   = "A"
+    Volt  = "V"
+    Ohm   = "Ω"
+    Hertz = "Hz"
+    Farad = "F"
+    Henry = "H"
+    Watt  = "W"
+)
+    Electronic Unit Abbreviations
 
- ```
-func EnToFloat(mantissa float64, expEnIdx int) (floatVal float64)
-    EnToFloat converts a float64 + its "en" code to a pure float64.
 
-	en.EnToFloat(632.5, en.Nano) returns 6.325e-07
+FUNCTIONS
 
-func FloatToEn(f float64) (result string)
-    FloatToEn converts a float64 to its "en" equivilent rounded to 3
-    significant digits.
+func EntoF(mantissa float64, expEn int) (f float64)
+    en.EntoF(number, category) takes a floating point number and adjusts it
+    to an engineering notation category. So if the number (It can be any
+    valid floating point number.) is say 1.23456 and the category is kilo
+    (1.23456 kilos) than the number will be stored as 1.23456e03 which is
+    1.23456 kilos or 123.456 units of the item. The returned adjusted number
+    can then be used as any other floating point number. en.EntoF(1234.56,
+    en.Kilo) returns 123.3456e+06
 
-	en.FloatToEn(6.325e-07) returns "633 n"
+func FtoEn(f float64) (enNotated string)
+    FtoEn(number, category) returns a string of the number in the format of
+    an engineering notation category. For the number 2.3456e03, is specified
+    with a category Kilo then FtoEn() will returned as "235k" or 123 kilos.
+    Note, that FtoEn() rounds the number to three digits.
 
-func Parse(f float64) (m string, e int, i int, c string)
-    Parse breaks out a float64 number into its engineering notation
-    components, e.g., mantissa, exponent, index, and code.
+    FtoEn(number) returns a string of number in the appropriate engineering
+    notation category, i.e., If the number 2.3456e07 is specified then the
+    string "23.5 M" (23.5 mega) will be returned.
 
-	en.Parse(6.325e-07) returns "633.00", -9, 5, "n"
- ```
+func FtoME(f float64) (m float64, e int)
+    Returns a float's mantissa and exponent. en.FtoME(-234.5e-03) returns
+    the floating point split into its mantissa and exponent, e.g., -2.345
+    and -1
+
+func GetEnCode(exp int) (c string)
+    GetEnCode(exponent) returns the Engineering Notation for the specified
+    exponent, e.g., en.GetEnCode(en.Micro) returns "µ"
+
 

@@ -1,5 +1,5 @@
 *~
-*log
-*txt
-*bak
+*.log
+*.txt
+*.bak
 

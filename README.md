@@ -80,7 +80,7 @@ func main() {
 	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
 
 	fmt.Printf("\n%s\n",
-		"Calculated Thevenin voltage and resistance for a circuit:")
+		"Calculate Thevenin Equivalence Circuit voltage and resistance:")
 
 	//   +---6kΩ----+---4kΩ--A-+
 	//   |          |          |
@@ -102,7 +102,7 @@ func main() {
 	// calculate Rth using product over sum
 	Rth := r3 + (r2*r1)/(r2+r1)
 
-	// Thevenin circuit:
+	// Thevenin Equivalence Circuit:
 	//   +----6kΩ---A-+
 	//   |            |
 	//  24V         RloadΩ

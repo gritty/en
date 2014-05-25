@@ -42,8 +42,6 @@ import "math"
 //
 // For an explanation of Engineering Notation see:
 //   http://en.wikipedia.org/wiki/Engineering_notation
-// For more information on equations, see:
-//   http://www.bowest.com.au/library.html
 
 // Engineering Notation index
 const (

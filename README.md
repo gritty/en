@@ -1,7 +1,9 @@
 en: Engineering Notation for the go language
-==
+============================================
 
-Package "en" implements function calls to convert floating point numbers to and from Engineering Notation.
+version 0.1, 2014-05025
+
+Package *_en_* implements function calls to convert floating point numbers to and from Engineering Notation.
 
 Copyright © 2014, Kent Loobey <kent@uoregon.edu>
 
@@ -142,7 +144,7 @@ Rth = 6.00kΩ
 
 #**Documentation:**
 
-You display the _en_ documentation by entering the following within a terminal window or by just looking at the source code:
+You can display the *_en_* documentation by entering the following command within a terminal window or by just looking at the source code:
 
  ```
 godoc "github.com/gritty/en"
@@ -156,7 +158,7 @@ go get "github.com/gritty/en"
 
 #**Limitations:**
 
-_en_ can only return engineering notation for values between Yocto (1.0e-24) and Yotta(1.0e24), e.g., 0.000,000,000,000,000,000,000,001 to 1,000,000,000,000,000,000,000,000
+*_en_* can only return engineering notation for values between Yocto (1.0e-24) and Yotta(1.0e24), e.g., 0.000,000,000,000,000,000,000,001 through 1,000,000,000,000,000,000,000,000
 
 en.FtoEn() rounds the return value to three digits.
 

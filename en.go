@@ -28,9 +28,10 @@ import "math"
 //
 // In the floating point contimuium of numbers the middle range of
 // number from 10x-24 to 10x+24 have been categorized into
-// 17 divisions/prefixes.  Each category of 3 (zeoto: 10x-21, 10x-20,
-// 10x-19) and named (milli, kilo, etc.) and assigned each a character
-// to represent each in turn (M for mega, G for giga, etc.).
+// 17 divisions or prefixes.  Each category of 3 (ex: 10x-21, 10x-20,
+// 10x-19) are named (ex: milli, kilo, etc.) and each assigned a
+// character to represent the category (ex: M for mega, G for giga,
+// etc.).
 // For example: The kilo category has the prefix "k" for the range
 // 10x+03 to 10x+05.
 //
@@ -76,34 +77,34 @@ const (
 )
 
 // Returns a float's mantissa and exponent.
-// en.FtoME(-234.5e-03)
-// returns the floating point split into its
-// mantissa and exponent, e.g., -2.345 and -1
+// en.FtoME(-234.5e-03) returns the mantissa and exponent for
+// the specified floating point, e.g., -2.345 and -1
 func FtoME(f float64) (m float64, e int) {
-	s, fstDigit := floatToDigits(f) // -m.mmme-ee
+	s, _, fstE := floatToDigits(f) // -m.mmme-ee
 	// Break out the mantissa (m.mmm).
-	m, _ = strconv.ParseFloat(s[:fstDigit+5], 64)
+	m, _ = strconv.ParseFloat(s[:fstE-1], 64)
 	// Break out the exponent (ee)
-	e, _ = strconv.Atoi(s[fstDigit+6:])
+	e, _ = strconv.Atoi(s[fstE:])
 	return
 }
 
 // en.EntoF(number, category) takes a floating point number and
 // adjusts it to an engineering notation category.  So if the number
 // (It can be any valid floating point number.) is say 1.23456 and the
-// category is kilo (1.23456 kilos) than the number will be stored as
+// category is kilo (1.23456 kilos) then EntoF() will return the
+// number as
 // 1.23456e03 which is 1.23456 kilos or 123.456 units of the item.
 // The returned adjusted number can then be used as any other floating
 // point number.  en.EntoF(1234.56, en.Kilo) returns 123.3456e+06
 func EntoF(mantissa float64, expEn int) (f float64) {
 	// Identify parts location and size, e.g., -m.mmmx-ee.
-	str, fstDigit := floatToDigits(mantissa)
+	str, _, fstE := floatToDigits(mantissa)
 
 	// Break out the mantissa (m.mmm).
-	man, _ := strconv.ParseFloat(str[:fstDigit+5], 64)
+	man, _ := strconv.ParseFloat(str[:fstE-1], 64)
 
 	// Break out the exponent (ee)
-	exp, _ := strconv.Atoi(str[fstDigit+6:])
+	exp, _ := strconv.Atoi(str[fstE:])
 	adjExp := exp + expEn
 
 	// Build internal float from the mantissa and the supplied
@@ -112,21 +113,15 @@ func EntoF(mantissa float64, expEn int) (f float64) {
 	return
 }
 
-// FtoEn(number, category) returns a string of the number in the
-// format of an engineering notation category.  For the number
-// 2.3456e03, is specified with a category Kilo then FtoEn() will
-// returned as "235k" or 123 kilos.  Note, that FtoEn() rounds the
-// number to three digits.
-//
-// FtoEn(number) returns a string of number in the appropriate
+// FtoEn(number) returns a string of the number in the appropriate
 // engineering notation category, i.e., If the number 2.3456e07 is
-// specified then the string "23.5 M" (23.5 mega) will be returned.
+// specified then the string "23.5M" (23.5 mega) will be returned.
 func FtoEn(f float64) (enNotated string) {
 	enNotated = floatToEn(f)
 	return
 }
 
-// GetEnCode(exponent) returns the Engineering Notation for the
+// GetEnCode(exponent) returns the Engineering Notation code for the
 // specified exponent, e.g., en.GetEnCode(en.Micro) returns "µ"
 func GetEnCode(exp int) (c string) {
 	if float64(exp) >= Yocto && float64(exp) <= Yotta {
@@ -144,14 +139,21 @@ func GetEnCode(exp int) (c string) {
 	return
 }
 
-func floatToDigits(f float64) (str string, fstDigit int) {
+func floatToDigits(f float64) (str string, fstM, fstE int) {
 	// Convert the float to a string so it can be picked apart.
-	str = fmt.Sprintf("%.3e", f) // -n.nnne-nn
+	str = fmt.Sprintf("%e", f) // -M.MMMe-EE
 	if str[:1] == "-" {
-		fstDigit = 1
+		fstM = 1
 	} else {
-		fstDigit = 0
+		fstM = 0
 	}
+	for {
+		if str[fstE:fstE+1] == "e" {
+			break
+		}
+		fstE++
+	}
+	fstE++
 	return
 }
 
@@ -161,19 +163,19 @@ func getDigits(f float64) (d [4]string, e float64) {
 	more := 2 // set for 2 passes just in case we need to round.
 	for more > 0 {
 		// Get the start points.
-		str, fstDigit := floatToDigits(f) // -m.mmmx-ee
+		str, fstM, fstE := floatToDigits(f) // -M.MMMe-EE
 
 		// pull the exponent
-		e, _ = strconv.ParseFloat(str[fstDigit+6:], 64)
+		e, _ = strconv.ParseFloat(str[fstE:], 64)
 
 		// Determine if the mantissa is minus or not.
 		if str[0:1] == "-" {
 			minus = true
 		}
-		// pull the digits  d.dddx-ee
-		d[0] = str[0 : fstDigit+1]
+		// pull the mantissa  M.MMMe-EE
+		d[0] = str[0 : fstM+1]
 		for i := 1; i <= 3; i++ { // skip over the period
-			d[i] = str[fstDigit+i+1 : fstDigit+i+2]
+			d[i] = str[fstM+i+1 : fstM+i+2]
 		}
 		// Round if needed.
 		if d[3] >= "5" && d[3] <= "9" {

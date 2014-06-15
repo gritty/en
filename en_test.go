@@ -3,6 +3,7 @@ package en
 import "testing"
 import "strconv"
 
+// test EntoF() and FtoEn()
 type testSet1 struct {
 	fIn   float64
 	cIn   int
@@ -21,6 +22,7 @@ var test1 = []testSet1{
 	{-632, Kilo, -632000, "-632k"},
 }
 
+// test FtoME()
 type testSet2 struct {
 	fIn  float64
 	mOut float64
@@ -36,21 +38,24 @@ var test2 = []testSet2{
 	{-0.123, -1.23, -1},
 }
 
+// test Code(), FtoEn(), FtoME(), and EntoF()
 type testSet3 struct {
 	mIn   string
 	iIn   int
 	enOut string
 	mOut  float64
 	eOut  int
+	mcOut string
+	ecOut string
 }
 
 var test3 = []testSet3{
-	{"0.123", Milli, "123µ", 1.23, -4},
-	{"123.00", Nano, "123n", 1.23, -7},
-	{"1230.00", Kilo, "1.23M", 1.23, 6},
-	{"-1230.00", Kilo, "-1.23M", -1.23, 6},
-	{"-123.00", Nano, "-123n", -1.23, -7},
-	{"-0.123", Milli, "-123µ", -1.23, -4},
+	{"0.123", Milli, "123µ", 1.23, -4, "12.3", "m"},
+	{"123.00", Nano, "123n", 1.23, -7, "12.3", "n"},
+	{"1230.00", Kilo, "1.23M", 1.23, 6, "12.3", "k"},
+	{"-1230.00", Kilo, "-1.23M", -1.23, 6, "12.3", "k"},
+	{"-123.00", Nano, "-123n", -1.23, -7, "12.3", "n"},
+	{"-0.123", Milli, "-123µ", -1.23, -4, "12.3", "m"},
 }
 
 func TestEn(t *testing.T) {
@@ -93,6 +98,7 @@ func TestEn(t *testing.T) {
 		fOut = fOut / fIn
 		mOut, eOut := FtoME(fOut)
 		enOut := FtoEn(fOut)
+		mcOut, ecOut := Code(test.iIn-1)
 		if enOut != test.enOut {
 			t.Error(
 				"For", test.enOut,
@@ -112,6 +118,20 @@ func TestEn(t *testing.T) {
 				"For", test.eOut,
 				"expected", test.eOut,
 				"got", eOut,
+			)
+		}
+		if mcOut != test.mcOut {
+			t.Error(
+				"For", test.mcOut,
+				"expected", test.mcOut,
+				"got", mcOut,
+			)
+		}
+		if ecOut != test.ecOut {
+			t.Error(
+				"For", test.ecOut,
+				"expected", test.ecOut,
+				"got", ecOut,
 			)
 		}
 	}

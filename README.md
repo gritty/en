@@ -1,7 +1,7 @@
 en: Engineering Notation for the go language
 ============================================
 
-version 0.1, 2014-05-25
+version 0.2, 2014-06-14
 
 Package "en" implements function calls to convert floating point numbers to and from Engineering Notation.
 
@@ -13,13 +13,13 @@ See LICENSE.md file for details.
 
 **_en contains four public functions._**
 
-1. **_EntoF()_** takes a floating point number and an engineering notation range and returns a standard float64 value.
+1. **_EntoF()_** takes a floating point number and an engineering notation category and returns the appropriate standard float64 value.
 
-2. **_FtoEn()_** takes a standard float64 value and returns an engineering notated string.
+2. **_FtoEn()_** takes a standard float64 value and returns an engineering notated string.  Note" FtoEn() rounds the result to three significant digits.
 
 3. **_FtoME()_** splits a float64 number into its engineering notation mantissa and exponent.
 
-4. **_GetEnCode()_** returns the engineering notation code/prefix for the specified exponent.
+4. **_Code()_** returns the period pattern and exponent for the specified engineering notation code/prefix.
 
 #**Example:**
 
@@ -28,65 +28,20 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"github.com/gritty/en"
 )
 
 func main() {
-	var f float64
-	var s string
-	var m float64
-	var e int
-
-	fmt.Printf("Public \"en\" functions:\n")
-
-	// EntoF() converts an engineering notation number to float64.
-	f = en.EntoF(-632.5, en.Nano) // returns 6.325e-07
-	fmt.Println("en.EntoF(632.5, en.Nano)    returns:", f)
-	// FtoEn() converts a float64 number to its engineering notation.
-	s = en.FtoEn(-6.325e-07) // returns "633 n"
-	fmt.Println("en.FtoEn(6.325e-07)         returns:", s)
-	// FtoME() breaks out a float64 number into its engineering notation
-	// mantissa and exponent parts.
-	m, e = en.FtoME(-6.325e-07) // returns "633.00", -12
-	// m = mantissa, e = exponent
-	fmt.Println("en.FtoME(6.325e-07)         returns:", m, e)
-	// GetEnCode() returns the engineering notation for a specified
-	// exponent.
-	s = en.GetEnCode(en.Micro) // returns "µ"
-	fmt.Println("en.GetEnCode(en.Micro)      returns:", s)
-
-	fmt.Printf("\nOut of range results:\n")
-
-	// FtoEn() returns a float64 number if it receives a number that is
-	// not within an engineering notation range.
-	s = en.FtoEn(0.1e-24) // returns
-	fmt.Println("en.FtoEn(0.1e-24)           returns:", s)
-	s = en.FtoEn(1000e+24) // returns 1.00e+27
-	fmt.Println("en.FtoEn(1000e+24)          returns:", s)
-
-	fmt.Printf("\nFour ways to convert 4.83k to a float64:\n")
-
-	f = en.EntoF(4.83, en.Kilo)
-	fmt.Printf("en.EntoF(4.83, en.Kilo)     returns: %.3e\n", f)
-	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
-	f = en.EntoF(0.00483, en.Mega)
-	fmt.Printf("en.EntoF(0.00483, en.Mega)  returns: %.3e\n", f)
-	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
-	f = en.EntoF(4830.0, en.Unit)
-	fmt.Printf("en.EntoF(4830.0, en.Unit)   returns: %.3e\n", f)
-	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
-	f = en.EntoF(4830000, en.Milli)
-	fmt.Printf("en.EntoF(4830000, en.Milli) returns: %.3e\n", f)
-	fmt.Println("en.FtoEn(4.830e+03)         returns:", en.FtoEn(f))
-
 	fmt.Printf("\n%s\n",
-		"Calculate Thevenin Equivalence Circuit voltage and resistance:")
+		"Thevenin Equivalence Circuit: Calculate voltage and resistance:")
 
-	//   +---6kΩ----+---4kΩ--A-+
-	//   |          |          |
-	//  72V        3kΩ      RloadΩ
-	//   |          |          |
-	//   +----------+--------B-+
+	//         r1         r3
+	//     +---6kΩ----+---4kΩ---+
+	//     |          |         |
+	// v1 72Vdc   r2 3kΩ      RloadΩ
+	//     |          |         |
+	//     +----------+---------+
 
 	v1 := float64(72)          // 72V dc
 	r1 := en.EntoF(6, en.Kilo) // 6kΩ
@@ -95,51 +50,77 @@ func main() {
 
 	// calculate Vth
 	i := v1 / (r1 + r2)
-	fmt.Println("I   =", en.FtoEn(i)+en.Amp)
 	Vth := i * r2
-	fmt.Println("Vth =", en.FtoEn(Vth)+en.Volt)
 
 	// calculate Rth using product over sum
 	Rth := r3 + (r2*r1)/(r2+r1)
 
 	// Thevenin Equivalence Circuit:
-	//   +----6kΩ---A-+
-	//   |            |
-	//  24V         RloadΩ
-	//   |            |
-	//   +----------B-+
+	//            Rth
+	//       +----6kΩ----+
+	//       |           |
+	// Vth 24Vdc       RloadΩ
+	//       |           |
+	//       +-----------+
 
+	fmt.Println("I   =", en.FtoEn(i)+en.Amp)
+	fmt.Println("Vth =", en.FtoEn(Vth)+en.Volt)
 	fmt.Println("Rth =", en.FtoEn(Rth)+en.Ohm)
+
+	fmt.Printf("\n%s\n",
+		"Series RL Circuit: Calculate voltage, resistance, and impedance:")
+
+	//         L
+	//    +---330mH--+
+	//    |          |
+	// E 120Vac   R 68Ω
+  // f 60Hz        |
+	//    |          |
+	//    +----------+
+
+	// Xl = 2πfL
+	// Zt = sqrt(Xl**2 + R**2)
+	// I  = E / Zt
+	// Vl = I * Xl
+	// Vr = I * R
+	// θ  = tan**-1(Vl / Vr)
+
+	E := en.EntoF(120, en.Unit)
+	f := en.EntoF(60, en.Unit)
+	L := en.EntoF(330, en.Milli)
+	R := en.EntoF(68, en.Unit)
+
+	Xl    := 2.0 * math.Pi * f * L
+	Zt    := math.Sqrt(Xl*Xl + R*R)
+	I     := E / Zt
+	Vl    := E * (Xl / Zt)
+	Vr    := E * (R / Zt)
+	theta := en.RadToDeg * math.Atan(Vl / Vr)
+
+	fmt.Printf("Xl                  = %s\n", en.FtoEn(Xl)+en.Ohm)
+	fmt.Printf("circuit impedance   = %s\n", en.FtoEn(Zt)+en.Ohm)
+	fmt.Printf("circuit current     = %s\n", en.FtoEn(I)+en.Amp)
+	fmt.Printf("magnitude of Vl     = %s\n", en.FtoEn(Vl)+en.Volt)
+	fmt.Printf("magnitude of Vr     = %s\n", en.FtoEn(Vr)+en.Volt)
+	fmt.Printf("circuit phase angle = %s\n", en.FtoEn(theta)+en.Degree)
 }
  ```
 
 #**Output:**
 
  ```
-Public "en" functions:
-en.EntoF(632.5, en.Nano)    returns: -6.325e-07
-en.FtoEn(6.325e-07)         returns: -633n
-en.FtoME(6.325e-07)         returns: -6.325 -7
-en.GetEnCode(en.Micro)      returns: µ
-
-Out of range results:
-en.FtoEn(0.1e-24)           returns: 100e-27
-en.FtoEn(1000e+24)          returns: 1.00e27
-
-Four ways to convert 4.83k to a float64:
-en.EntoF(4.83, en.Kilo)     returns: 4.830e+03
-en.FtoEn(4.830e+03)         returns: 4.83k
-en.EntoF(0.00483, en.Mega)  returns: 4.830e+03
-en.FtoEn(4.830e+03)         returns: 4.83k
-en.EntoF(4830.0, en.Unit)   returns: 4.830e+03
-en.FtoEn(4.830e+03)         returns: 4.83k
-en.EntoF(4830000, en.Milli) returns: 4.830e+03
-en.FtoEn(4.830e+03)         returns: 4.83k
-
-Calculated Thevenin voltage and resistance for a circuit:
+Thevenin Equivalence Circuit: Calculate voltage and resistance:
 I   = 8.00mA
 Vth = 24.0V
 Rth = 6.00kΩ
+
+Series RL Circuit: Calculate voltage, resistance, and impedance:
+Xl                  = 124Ω
+circuit impedance   = 142Ω
+circuit current     = 846mA
+magnitude of Vl     = 105V
+magnitude of Vr     = 57.6V
+circuit phase angle = 61.3°
  ```
 
 #**Documentation:**
@@ -162,5 +143,5 @@ go get "github.com/gritty/en"
 
 "en" can only return engineering notation for values between yocto (1.0e-24) and yotta(1.0e24), e.g., 0.000,000,000,000,000,000,000,001 through 1,000,000,000,000,000,000,000,000
 
-en.FtoEn() rounds the return value to three digits.
+en.FtoEn() rounds the return value to three significant digits.
 
